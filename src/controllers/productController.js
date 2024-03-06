@@ -98,7 +98,19 @@ class ProductController {
                 );
             }
     
-            await ProductService.addProduct(title, description, code, price, true, stock, category, thumbnails);
+            const usuario = req.session.usuario;
+            let ownerEmail;
+    
+            if (usuario && usuario.role === 'premium') {
+                // Usuario premium, establece el owner como su correo electrónico
+                ownerEmail = usuario.email;
+            } else {
+                // Usuario no premium, establece el owner como "admin" por defecto
+                ownerEmail = 'admin';
+            }
+    
+            await ProductService.addProduct(title, description, code, price, true, stock, category, thumbnails, ownerEmail);
+            console.log(ownerEmail)
     
             const products = await ProductService.getProducts();
             req.io.emit('updateProducts', products);

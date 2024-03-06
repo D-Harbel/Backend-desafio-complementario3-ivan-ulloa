@@ -66,7 +66,7 @@ class ProductDao {
         }
     }
 
-    async addProduct(title, description, code, price, status, stock, category, thumbnails) {
+    async addProduct(title, description, code, price, status, stock, category, thumbnails, ownerEmail ) {
         try {
             const product = new Product({
                 title,
@@ -76,7 +76,8 @@ class ProductDao {
                 status,
                 stock,
                 category,
-                thumbnails
+                thumbnails,
+                owner: ownerEmail
             });
 
             await product.save();

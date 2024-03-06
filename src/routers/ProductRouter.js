@@ -5,7 +5,7 @@ const { isAdmin } = require('../middleware/authorization');
 
 module.exports = function (io) {
     router.get('/', productController.getProducts);
-    router.post('/', isAdmin, productController.addProduct);
+    router.post('/', productController.addProduct);
     router.put('/:id', isAdmin, productController.updateProduct);
     router.get('/:id', productController.getProductById);
     router.delete('/:id', isAdmin, productController.deleteProduct);
