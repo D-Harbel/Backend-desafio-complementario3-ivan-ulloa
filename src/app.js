@@ -10,6 +10,7 @@ const ChatRouter = require('./routers/ChatRouter');
 const SessionRouterLocal = require('./routers/SessionLocalRouter')
 const SessionGithubRouter = require('./routers/SessionGithubRouter')
 const LoginRouter = require('./routers/LoginRouter')
+const userRouter = require('./routers/userRouter')
 const ProductService = require('./repository/product.service');
 const MessageDao = require('./dao/messageDao');
 const CartService = require('./repository/cart.service');
@@ -85,6 +86,7 @@ app.use('/api/clientes', ClientRouter(io))
 
 app.use('/api/products', ProductRouter(io));
 app.use('/api/carts', CartRouter(io));
+app.use('/api/users', userRouter(io));
 app.use('/chat', ChatRouter(io, MessageDao));
 
 
