@@ -47,17 +47,17 @@ class ProductController {
 
     async addProduct(req, res) {
         const { title, description, code, price, stock, category, thumbnails } = req.body;
-    
+
         try {
             if (typeof title !== 'string' || title.trim() === '') {
                 throw new CustomError(
                     ErrorCodes.Campo_Vacio.name,
                     ErrorCodes.title.message,
                     STATUS_CODES.ERROR_ARGUMENTOS,
-                    
+
                 );
             }
-    
+
             if (typeof description !== 'string' || description.trim() === '') {
                 throw new CustomError(
                     ErrorCodes.Campo_Vacio.name,
@@ -65,7 +65,7 @@ class ProductController {
                     STATUS_CODES.ERROR_ARGUMENTOS,
                 );
             }
-    
+
             if (typeof code !== 'string' || code.trim() === '') {
                 throw new CustomError(
                     ErrorCodes.Campo_Vacio.name,
@@ -73,7 +73,7 @@ class ProductController {
                     STATUS_CODES.ERROR_ARGUMENTOS,
                 );
             }
-    
+
             if (typeof price !== 'number' || isNaN(price) || price <= 0) {
                 throw new CustomError(
                     ErrorCodes.Numeros.name,
@@ -81,7 +81,7 @@ class ProductController {
                     STATUS_CODES.ERROR_ARGUMENTOS,
                 );
             }
-    
+
             if (typeof stock !== 'number' || isNaN(stock) || stock < 0) {
                 throw new CustomError(
                     ErrorCodes.Numeros.name,
@@ -89,7 +89,7 @@ class ProductController {
                     STATUS_CODES.ERROR_ARGUMENTOS,
                 );
             }
-    
+
             if (typeof category !== 'string' || category.trim() === '') {
                 throw new CustomError(
                     ErrorCodes.Campo_Vacio.name,
@@ -97,10 +97,10 @@ class ProductController {
                     STATUS_CODES.ERROR_ARGUMENTOS,
                 );
             }
-    
+
             const usuario = req.session.usuario;
             let ownerEmail;
-    
+
             if (usuario && usuario.role === 'premium') {
                 // Usuario premium, establece el owner como su correo electrónico
                 ownerEmail = usuario.email;
@@ -108,25 +108,43 @@ class ProductController {
                 // Usuario no premium, establece el owner como "admin" por defecto
                 ownerEmail = 'admin';
             }
-    
+
             await ProductService.addProduct(title, description, code, price, true, stock, category, thumbnails, ownerEmail);
             console.log(ownerEmail)
-    
+
             const products = await ProductService.getProducts();
             req.io.emit('updateProducts', products);
-    
+
             res.status(201).json({ message: 'Producto agregado exitosamente' });
         } catch (error) {
             console.error('Error al agregar el producto:', error.message);
-            return res.status(error.code || 500).json({ name: error.name, code: STATUS_CODES.ERROR_ARGUMENTOS, message: error.message,  });
+            return res.status(error.code || 500).json({ name: error.name, code: STATUS_CODES.ERROR_ARGUMENTOS, message: error.message, });
         }
     }
 
     async updateProduct(req, res) {
         const productId = req.params.id;
         const updatedProduct = req.body;
+        const usuario = req.session.usuario;
 
         try {
+
+            const existingProduct = await ProductService.getProductById(productId);
+
+            if (!existingProduct) {
+                return res.status(404).json({ error: 'Producto no encontrado' });
+            }
+
+            // Verificar si el usuario es premium o administrador
+            if (usuario.role !== 'premium' && usuario.role !== 'admin') {
+                return res.status(403).json({ error: 'Permiso denegado' });
+            }
+
+            // Verificar si el producto pertenece al usuario (solo aplicable para usuarios premium)
+            if (usuario.role === 'premium' && existingProduct.owner !== usuario.email) {
+                return res.status(403).json({ error: 'No tienes permiso para actualizar este producto, pertenece a otro usuario' });
+            }
+
             await ProductService.updateProduct(productId, updatedProduct);
 
             const products = await ProductService.getProducts();
@@ -157,6 +175,7 @@ class ProductController {
 
     async deleteProduct(req, res) {
         const productId = req.params.id;
+        const usuario = req.session.usuario;
 
         const existingProduct = await ProductService.getProductById(productId);
         if (!existingProduct) {
@@ -164,6 +183,9 @@ class ProductController {
         }
 
         try {
+            if (usuario.role !== 'admin' && (usuario.role !== 'premium' || existingProduct.owner !== usuario.email)) {
+                return res.status(403).json({ error: 'Permiso denegado, intentas eliminar el producto de otro usuario' });
+            }
             await ProductService.deleteProduct(productId);
 
             req.io.emit('productDeleted', { productId });
