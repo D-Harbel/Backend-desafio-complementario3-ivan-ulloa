@@ -33,19 +33,25 @@ class CartController {
     async addProductToCart(req, res) {
         const cid = req.params.cid;
         const { productId, quantity } = req.body;
-
+        const user = req.session.usuario;
+    
         try {
             const cart = await CartService.getCartById(cid);
-
+    
             if (!cart) {
                 return res.status(404).json({ error: 'Carrito no encontrado' });
             }
-
+    
+            const product = await productService.getProductById(productId);
+            if (user && user.role === 'premium' && product.owner === user.email) {
+                return res.status(403).json({ error: 'No puedes agregar un producto que te pertenece a tu carrito' });
+            }
+    
             await CartService.addProductToCart(cid, productId, quantity);
-
+    
             const updatedCart = await CartService.getCartById(cid);
             req.io.emit('updateCart', updatedCart);
-
+    
             res.status(201).json({ message: 'Producto agregado al carrito' });
         } catch (error) {
             console.error(`Error al agregar un producto al carrito con ID ${cid}:`, error);

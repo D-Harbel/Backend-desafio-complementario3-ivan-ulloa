@@ -25,6 +25,7 @@ const generateMockProducts = require('./mocks/product.mocks');
 const { errorHandler } = require('./middleware/errorHandler');
 const { middLogg, logger } = require('./utils/winston');
 
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);

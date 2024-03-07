@@ -2,11 +2,12 @@
 <h1>Bienvenido, {{usuario.first_name}} {{usuario.last_name}} - Rol: {{usuario.role}}</h1>
 <h2>Lista de Productos</h2>
 <div id="userRole" data-role="{{usuario.cartID}}"></div>
+<div id="userEmail" data-Email="{{usuario.email}}"></div>
 <ul>
     {{#each products.payload}}
     <li>
         nombre: {{this.title}} - categoria: {{this.category}} - precio:{{this.price}}
-        <button class="addToCartBtn" onclick="addToCart('{{this._id}}', '{{this.title}}' )" disabled>Agregar al
+        <button class="addToCartBtn" onclick="addToCart('{{this._id}}', '{{this.title}}', '{{this.owner}}')" disabled>Agregar al
             carrito</button>
         <hr> <br>
     </li>
@@ -49,13 +50,20 @@
             button.setAttribute('disabled', 'true');
         }
     }
+    
 
-    function addToCart(productId, productName) {
+function addToCart(productId, productName, productOwner) {
+    const userEmail = document.getElementById('userEmail').getAttribute('data-Email');
 
-        if (typeof socket !== 'undefined' && socket.connected) {
-            socket.emit('addToCart', { productId, productName, userRole });
-        } else {
-            console.error('Socket no definido o no conectado');
-        }
+    if (userEmail === productOwner) {
+        console.log('Eres el propietario de este producto, no puedes agregarlo a tu');
+        return;
     }
+
+    if (typeof socket !== 'undefined' && socket.connected) {
+        socket.emit('addToCart', { productId, productName, userRole });
+    } else {
+        console.error('Socket no definido o no conectado');
+    }
+}
 </script>
